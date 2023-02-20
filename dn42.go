@@ -79,6 +79,16 @@ func (dn42 DN42) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg)
 		if err != nil {
 			goto nextPlugin
 		}
+	} else if ip, _ = dn42.parseIPv6Ptr(qname); ip != nil {
+		filename, cidr, err = dn42.findIPv6RecordFile(*ip)
+		if cidr == nil || err != nil {
+			goto nextPlugin
+		}
+
+		nsList, extraList, err = dn42.parseRegistryFile(qname, "inet6num", filename)
+		if err != nil {
+			goto nextPlugin
+		}
 	} else {
 		domain, err = dn42.findDomain(qname)
 		if err != nil {
