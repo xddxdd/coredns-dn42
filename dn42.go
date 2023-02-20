@@ -2,6 +2,7 @@ package dn42
 
 import (
 	"context"
+	"net"
 
 	"github.com/coredns/coredns/plugin"
 	clog "github.com/coredns/coredns/plugin/pkg/log"
@@ -37,17 +38,57 @@ func (dn42 DN42) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg)
 	resp.Authoritative = true
 
 	var domain string
-	var nsList, extraList []dns.RR
+	var nsList, nsList2, extraList []dns.RR
 	var err error
+	var ip *net.IP
+	var cidr *net.IPNet
+	var filename string
+	var newQname string
 
-	domain, err = dn42.findDomain(qname)
-	if err != nil {
-		goto nextPlugin
-	}
+	if ip, _ = dn42.parseIPv4Ptr(qname); ip != nil {
+		filename, cidr, err = dn42.findIPv4RecordFile(*ip)
+		if cidr == nil || err != nil {
+			goto nextPlugin
+		}
 
-	nsList, extraList, err = dn42.parseRegistryFile(qname, "dns", domain)
-	if err != nil {
-		goto nextPlugin
+		if maskLength := dn42.maskLength(*cidr); maskLength > 24 && maskLength < 32 {
+			nsList, newQname, err = dn42.generateIPv4CNAMERecord(qname, *ip, *cidr)
+			if err != nil {
+				goto nextPlugin
+			}
+
+			nsList2, extraList, err = dn42.parseRegistryFile(newQname, "inetnum", filename)
+			if err != nil {
+				goto nextPlugin
+			}
+
+			nsList = append(nsList, nsList2...)
+		} else {
+			nsList, extraList, err = dn42.parseRegistryFile(qname, "inetnum", filename)
+			if err != nil {
+				goto nextPlugin
+			}
+		}
+	} else if cidr, _ = dn42.parseIPv4CIDRPtr(qname); cidr != nil {
+		filename, cidr, err = dn42.findIPv4CIDRRecordFile(*cidr)
+		if cidr == nil || err != nil {
+			goto nextPlugin
+		}
+
+		nsList, extraList, err = dn42.parseRegistryFile(qname, "inetnum", filename)
+		if err != nil {
+			goto nextPlugin
+		}
+	} else {
+		domain, err = dn42.findDomain(qname)
+		if err != nil {
+			goto nextPlugin
+		}
+
+		nsList, extraList, err = dn42.parseRegistryFile(qname, "dns", domain)
+		if err != nil {
+			goto nextPlugin
+		}
 	}
 
 	resp.Ns = nsList

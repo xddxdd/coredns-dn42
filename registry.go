@@ -58,6 +58,8 @@ func (dn42 DN42) createDSRecord(qname string, ds string) (*dns.DS, error) {
 		return nil, err
 	}
 
+	digest := strings.ReplaceAll(splitted[3], " ", "")
+
 	return &dns.DS{
 		Hdr: dns.RR_Header{
 			Name:   qname,
@@ -68,7 +70,7 @@ func (dn42 DN42) createDSRecord(qname string, ds string) (*dns.DS, error) {
 		KeyTag:     uint16(keyTag),
 		Algorithm:  uint8(algorithm),
 		DigestType: uint8(digestType),
-		Digest:     splitted[3],
+		Digest:     digest,
 	}, nil
 }
 
