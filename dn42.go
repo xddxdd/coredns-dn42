@@ -25,25 +25,19 @@ type DN42 struct {
 // ServeDNS implements the plugin.Handler interface. This method gets called when example is used
 // in a Server.
 func (dn42 DN42) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
-	// This function could be simpler. I.e. just fmt.Println("example") here, but we want to show
-	// a slightly more complex example as to make this more interesting.
-	// Here we wrap the dns.ResponseWriter in a new ResponseWriter and call the next plugin, when the
-	// answer comes back, it will print "example".
-
 	state := request.Request{W: w, Req: r}
 	qname := state.QName()
 
 	resp := new(dns.Msg)
 	resp.SetReply(r)
 	resp.Authoritative = true
+	resp.Compress = true
 
-	var domain string
-	var nsList, nsList2, extraList []dns.RR
+	var cidr *net.IPNet
+	var domain, filename, newQname string
 	var err error
 	var ip *net.IP
-	var cidr *net.IPNet
-	var filename string
-	var newQname string
+	var nsList, nsList2, extraList []dns.RR
 
 	if ip, _ = dn42.parseIPv4Ptr(qname); ip != nil {
 		filename, cidr, err = dn42.findIPv4RecordFile(*ip)
