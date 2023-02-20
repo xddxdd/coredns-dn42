@@ -137,6 +137,7 @@ func (dn42 DN42) parseRegistryFile(qname string, folder string, filename string)
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 
+	var directList []dns.RR
 	var nsList []dns.RR
 	var extraList []dns.RR
 	var seenNS []string
@@ -162,11 +163,19 @@ func (dn42 DN42) parseRegistryFile(qname string, folder string, filename string)
 					if err != nil {
 						return []dns.RR{}, []dns.RR{}, err
 					}
+					// Bypass NS lookup if qname points to a NS with IP
+					if qname == rec.Header().Name {
+						directList = append(directList, rec)
+					}
 					extraList = append(extraList, rec)
 				} else {
 					rec, err := dn42.createARecordForNS(ns, ip)
 					if err != nil {
 						return []dns.RR{}, []dns.RR{}, err
+					}
+					// Bypass NS lookup if qname points to a NS with IP
+					if qname == rec.Header().Name {
+						directList = append(directList, rec)
 					}
 					extraList = append(extraList, rec)
 				}
@@ -181,5 +190,8 @@ func (dn42 DN42) parseRegistryFile(qname string, folder string, filename string)
 		}
 	}
 
+	if len(directList) != 0 {
+		return directList, []dns.RR{}, nil
+	}
 	return nsList, extraList, nil
 }
