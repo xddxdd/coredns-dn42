@@ -30,6 +30,14 @@ func simpleMaskLength(mask net.IPMask) int {
 	return n
 }
 
-func (dn42 DN42) maskLength(cidr net.IPNet) int {
+func maskLength(cidr net.IPNet) int {
 	return simpleMaskLength(cidr.Mask)
+}
+
+// https://stackoverflow.com/questions/34816489/reverse-slice-of-strings
+func reverse(ss []string) {
+	last := len(ss) - 1
+	for i := 0; i < len(ss)/2; i++ {
+		ss[i], ss[last-i] = ss[last-i], ss[i]
+	}
 }

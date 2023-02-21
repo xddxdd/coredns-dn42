@@ -5,17 +5,13 @@ import (
 	"net"
 
 	"github.com/coredns/coredns/plugin"
-	clog "github.com/coredns/coredns/plugin/pkg/log"
 	"github.com/coredns/coredns/request"
 
 	"github.com/miekg/dns"
 )
 
-// Define log to be a logger with the plugin name in it. This way we can just use log.Info and
-// friends to log.
-var log = clog.NewWithPlugin("dn42")
+// var log = clog.NewWithPlugin("dn42")
 
-// DN42 is an example plugin to show how to write a plugin.
 type DN42 struct {
 	DN42RegistryPath string
 	Ttl              uint32
@@ -33,49 +29,34 @@ func (dn42 DN42) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg)
 	resp.Authoritative = true
 	resp.Compress = true
 
-	var cidr *net.IPNet
 	var domain, filename, newQname string
 	var err error
 	var ip *net.IP
+	var ipMask int
 	var nsList, nsList2, extraList []dns.RR
 
-	if ip, _ = dn42.parseIPv4Ptr(qname); ip != nil {
-		filename, cidr, err = dn42.findIPv4RecordFile(*ip)
-		if cidr == nil || err != nil {
-			goto nextPlugin
-		}
-
-		if maskLength := dn42.maskLength(*cidr); maskLength > 24 && maskLength < 32 {
-			nsList, newQname, err = dn42.generateIPv4CNAMERecord(qname, *ip, *cidr)
-			if err != nil {
-				goto nextPlugin
-			}
-
-			nsList2, extraList, err = dn42.parseRegistryFile(newQname, "inetnum", filename)
-			if err != nil {
-				goto nextPlugin
-			}
-
-			nsList = append(nsList, nsList2...)
-		} else {
-			nsList, extraList, err = dn42.parseRegistryFile(qname, "inetnum", filename)
-			if err != nil {
-				goto nextPlugin
-			}
-		}
-	} else if cidr, _ = dn42.parseIPv4CIDRPtr(qname); cidr != nil {
-		filename, cidr, err = dn42.findIPv4CIDRRecordFile(*cidr)
-		if cidr == nil || err != nil {
-			goto nextPlugin
-		}
-
-		nsList, extraList, err = dn42.parseRegistryFile(qname, "inetnum", filename)
+	if ip, ipMask, _ = dn42.parseIPv4Ptr(qname); ip != nil {
+		filename, ipMask, err = dn42.findIPv4RecordFile(*ip, ipMask)
 		if err != nil {
 			goto nextPlugin
 		}
-	} else if ip, _ = dn42.parseIPv6Ptr(qname); ip != nil {
-		filename, cidr, err = dn42.findIPv6RecordFile(*ip)
-		if cidr == nil || err != nil {
+
+		if ipMask > 24 && ipMask < 32 {
+			nsList, newQname, err = dn42.generateIPv4CNAMERecord(qname, *ip, ipMask)
+			if err != nil {
+				goto nextPlugin
+			}
+		}
+
+		nsList2, extraList, err = dn42.parseRegistryFile(newQname, "inetnum", filename)
+		if err != nil {
+			goto nextPlugin
+		}
+
+		nsList = append(nsList, nsList2...)
+	} else if ip, ipMask, _ = dn42.parseIPv6Ptr(qname); ip != nil {
+		filename, _, err = dn42.findIPv6RecordFile(*ip, ipMask)
+		if err != nil {
 			goto nextPlugin
 		}
 

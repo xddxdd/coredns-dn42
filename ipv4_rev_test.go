@@ -16,8 +16,7 @@ func testIPv4CNAMERecord(t *testing.T, ipString string, mask int, expected strin
 	}
 
 	ip := net.ParseIP(ipString)
-	_, cidr, _ := net.ParseCIDR(fmt.Sprintf("%s/%d", ip, mask))
-	_, newQname, _ := x.generateIPv4CNAMERecord("", ip, *cidr)
+	_, newQname, _ := x.generateIPv4CNAMERecord("", ip, mask)
 	if newQname != expected {
 		t.Errorf("newQname (%s) != expected (%s)", newQname, expected)
 	}
