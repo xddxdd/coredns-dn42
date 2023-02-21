@@ -1,80 +1,34 @@
-# example
+# CoreDNS-DN42
 
-## Name
+A CoreDNS plugin for serving the DN42 registry.
 
-*example* - prints "example" after a query is handled.
+This plugin acts as an authoritative server. It returns NS & DS records for forward zones and reverse IPv4/IPv6 zones in DN42 registry. It doesn't do any recursion, you need a separate DNS resolver for that.
 
-## Description
+## WARNING
 
-The example plugin prints "example" on every query that got handled by the server. It serves as
-documentation for writing CoreDNS plugins.
+This plugin is **experimental**. While it appears to work for forward and reverse IPv4/IPv6 DNS, it isn't fully compliant with DNS protocol specs. Compatibility with DNS clients isn't guaranteed.
 
 ## Compilation
 
-This package will always be compiled as part of CoreDNS and not in a standalone way. It will require you to use `go get` or as a dependency on [plugin.cfg](https://github.com/coredns/coredns/blob/master/plugin.cfg).
+In your cloned [CoreDNS](https://github.com/coredns/coredns) repository:
 
-The [manual](https://coredns.io/manual/toc/#what-is-coredns) will have more information about how to configure and extend the server with external plugins.
+1. Add `dn42:github.com/xddxdd/coredns-dn42` to the end of plugin.cfg
+2. `go get github.com/xddxdd/coredns-dn42`
+3. `go generate`
+4. `go build`
 
-A simple way to consume this plugin, is by adding the following on [plugin.cfg](https://github.com/coredns/coredns/blob/master/plugin.cfg), and recompile it as [detailed on coredns.io](https://coredns.io/2017/07/25/compile-time-enabling-or-disabling-plugins/#build-with-compile-time-configuration-file).
+## Usage
 
-~~~
-example:github.com/coredns/example
-~~~
-
-Put this early in the plugin list, so that *example* is executed before any of the other plugins.
-
-After this you can compile coredns by:
-
-``` sh
-go generate
-go build
+```
+. {
+  dn42 "/path/to/dn42/registry" 900
+}
 ```
 
-Or you can instead use make:
+First argument (mandatory) is the path to DN42 registry. Inside the registry path, there should be a `data` folder containing all IPs and domains.
 
-``` sh
-make
-```
+Second argument (optional) is the default TTL. If unset, default TTL is 3600.
 
-## Syntax
+## License
 
-~~~ txt
-example
-~~~
-
-## Metrics
-
-If monitoring is enabled (via the *prometheus* directive) the following metric is exported:
-
-* `coredns_example_request_count_total{server}` - query count to the *example* plugin.
-
-The `server` label indicated which server handled the request, see the *metrics* plugin for details.
-
-## Ready
-
-This plugin reports readiness to the ready plugin. It will be immediately ready.
-
-## Examples
-
-In this configuration, we forward all queries to 9.9.9.9 and print "example" whenever we receive
-a query.
-
-~~~ corefile
-. {
-  forward . 9.9.9.9
-  example
-}
-~~~
-
-Or without any external connectivity:
-
-~~~ corefile
-. {
-  whoami
-  example
-}
-~~~
-
-## Also See
-
-See the [manual](https://coredns.io/manual).
+Apache 2.0 license.
