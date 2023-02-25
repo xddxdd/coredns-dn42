@@ -26,7 +26,6 @@ func (dn42 DN42) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg)
 
 	resp := new(dns.Msg)
 	resp.SetReply(r)
-	resp.Authoritative = true
 	resp.Compress = true
 
 	var domain, filename, newQname string

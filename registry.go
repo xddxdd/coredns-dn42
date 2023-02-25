@@ -15,16 +15,6 @@ import (
 const NS_PREFIX = "nserver:            "
 const DS_PREFIX = "ds-rdata:           "
 
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (dn42 DN42) createNSRecord(qname string, ns string) (*dns.NS, error) {
 	return &dns.NS{
 		Hdr: dns.RR_Header{

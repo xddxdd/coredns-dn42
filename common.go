@@ -34,6 +34,16 @@ func maskLength(cidr net.IPNet) int {
 	return simpleMaskLength(cidr.Mask)
 }
 
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
+}
+
 // https://stackoverflow.com/questions/34816489/reverse-slice-of-strings
 func reverse(ss []string) {
 	last := len(ss) - 1
